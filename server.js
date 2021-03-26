@@ -1,26 +1,38 @@
-require('rootpath')();
-const express = require('express');
-const app = express();
-const cors = require('cors');
-const bodyParser = require('body-parser');
-const jwt = require('main/jwt');
-const errorHandler = require('main/errors');
+const express = require('express')
+const mongoose = require('mongoose')
+const morgan = require('morgan') 
+const bodyParser = require('body-parser')
 
-app.use(bodyParser.urlencoded({ extended: false }));
-app.use(bodyParser.json());
-app.use(cors());
+const PersonRoute = require('./routes/person')
+const AuthRoute = require('./routes/auth')
 
-// use JWT auth to secure the api
-app.use(jwt());
+mongoose.connect('mongodb+srv://shara:sharamongo%4013@cluster0.z7wpn.mongodb.net/myFirstDatabase?retryWrites=true&w=majority',{
+    useCreateIndex: true,
+    useNewUrlParser: true, 
+    useUnifiedTopology: true, 
+    useFindAndModify: false
+})
+const db =mongoose.connection
 
-// api routes
-app.use('/user', require('./user/user.controller'));
-
-// global error handler
-app.use(errorHandler);
-
-// start server
-const port = process.env.NODE_ENV === 'production' ? (process.env.PORT || 80) : 4000;
-const server = app.listen(port, function () {
-    console.log('Server listening on port ' + port);
+db.on('error', (err) => {
+    console.log(err)
 });
+
+db.once('open', () =>{
+    console.log('DB connected')
+});
+
+const app = express()
+
+app.use(morgan('dev'))
+app.use(bodyParser.urlencoded({extended: true}))
+app.use(bodyParser.json())
+
+const PORT = process.env.PORT || 3500
+
+app.listen(PORT, ()=> {
+    console.log('Server is running on port ${PORT}')
+})
+
+app.use('/api/person', PersonRoute)
+app.use('/api', AuthRoute)
